@@ -12,45 +12,42 @@
 #include "include/elfd_err.h"
 #include "include/elfd_internals.h"
 
-elfd_file_list_entry * elfd_file_list = NULL;
-short elfd_is_file_list_init;
+elfd_files_collection * collection_obj = NULL;
 
-
-/* Allocate and free internals structures used by the library */
 int elfd_init()
 {
+    /* Set up the collections */
+    collection_obj = malloc(sizeof(elfd_files_collection));
 
-    /* Init elfd_file_list struct */
-    if((elfd_file_list = (elfd_file_list_entry *)malloc(ELFDFLE_SIZE)) == (elfd_file_list_entry *)-1)
-    {
-        elfd_warning("elfd_init()","Can't allocate memory for struct elfd_file_list");
-        return -1;
-    }
-        
-    elfd_file_list->latest_handler = 0;
-    elfd_file_list->list_size = 0;
-    elfd_file_list->entry = NULL;
-
-    elfd_is_file_list_init = 0;
-
-    return 0;
+    if(collection_obj == NULL)
+        goto err;
     
-}
+    memset((void*)collection_obj, 0x00, sizeof(elfd_files_collection));
 
-int elfd_fini()
-{
-    if(_elfd_list_clear(elfd_file_list) == -1)
-    {
-        elfd_warning("elfd_fini()","Can't clear the elfd_file_list");
-        return -1;
-    }
+    /* Set up the array */
+    void * arr = calloc(_COLLECTION_PAGE_SIZE, sizeof(elfd_file *));
+    
+    if(arr == NULL)
+        goto err_free;
+    
+    memset((void*)arr, 0x00, sizeof(elfd_file *) * _COLLECTION_PAGE_SIZE);
 
-    memset(elfd_file_list, 0x0, ELFDFLE_SIZE);
-    free(elfd_file_list);
-    elfd_file_list = NULL;
+    /* Fill the collection struct */
+    collection_obj->latst_user_handler = 0;
+    collection_obj->item_count = _COLLECTION_PAGE_SIZE;
+    collection_obj->item_used = 0x0;
+    collection_obj->last_freed_item;
+    collection_obj->elfd_files_collection = (elfd_files **)arr;
 
     return 0;
+err_free:
+    free(collection_obj)
+    collection_obj = NULL;
+err:
+    return -1;
 }
+
+int elfd_close(int);
 
 /* Open and elf file and save it in the elf_vector */
 int elfd_open(const char * path)
@@ -59,7 +56,7 @@ int elfd_open(const char * path)
     struct stat stat_buffer; 
     char file_buffer[4];
     void * mmapped_addr;
-    elfd_file * elf_file;
+    elfd_file * file;
 
     memset(&stat_buffer, 0x0, sizeof(stat_buffer));
     memset(file_buffer, 0x0, sizeof(file_buffer));
@@ -90,7 +87,7 @@ int elfd_open(const char * path)
     }
 
     /* Register elfd_file struct to handle the elf file */
-    if((elf_file = _register_elfd_file()) == (elfd_file*)-1)
+    if((file = _elfd_register_elfd_file() == (elfd_file*)-1)
     {
         elfd_warning("elfd_open()", "Allocating memory to elfd_file struct failed");
         goto _err;
@@ -104,58 +101,35 @@ int elfd_open(const char * path)
     }
 
     /* Mmap file */
-    if( (mmapped_addr = mmap(NULL, stat_buffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+    if((mmapped_addr = mmap(NULL, stat_buffer.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
     {
         elfd_warning("elfd_open()","Map file failed, mmap()");
         goto _err_elf_file;
     }
 
     /* Fill the elfd_file struct and append it to the dll */
-    elf_file->fd = fd;
-    memcpy((void*)elf_file->path, path, MAX_PATH_SIZE);
-    elf_file->addr = mmapped_addr;
-    elf_file->user_handle = elfd_file_list->latest_handler++;
-    elf_file->size = stat_buffer.st_size;
+    file->fd = fd;
+    memcpy((void*)file->path, path, MAX_PATH_SIZE);
+    file->addr = mmapped_addr;
+    file->user_handle = elfd_file_list->latest_handler++;
+    file->len= stat_buffer.st_size;
 
-    elfd_file_list->list_size++;
-
-    if(_elfd_append_file(elfd_file_list, elf_file) == -1)
+    if(_elfd_collection_append_elfd_file(collection_obj, file) == -1)
     {
-        elfd_warning("elfd_open()","Linking the elf_file to the intern dll failed");
-        goto _err_elf_file;
+        elfd_warning("elfd_open()","appending the file in the collection failed");
+        goto _err_unmap;
     }
+    
+    return file->user_handle;
 
-    return elf_file->user_handle;
-
+_err_unmap:
+    unmap(file->addr, file->len);
 _err_elf_file:
-    _unregister_elfd_file(elf_file);
+    _elfd_unregister_elfd_file(elf_file);
 _err:
     close(fd);
     return -1;
 } 
-
-/* Close an elf file and free all structures */
-int elfd_close(int handler)
-{
-    elfd_file * victim;
-    /* Sanitize handler */
-    if(handler > elfd_file_list->latest_handler )
-    {
-        elfd_warning("elfd_close()","Bad handler");
-        return -1;
-    }
-
-    if((victim = _elfd_get_file(elfd_file_list, handler)) == (elfd_file *)-1)
-    {
-        elfd_warning("elfd_close()","elfd_file not found");
-        return -1;
-    }
-
-    _elfd_unlink_file(elfd_file_list, victim);    
-    _unregister_elfd_file(victim);
-
-    return 0;
-}
 
 /* Print differents header in stdout */
 void elfd_dump_hdr(int handler);
