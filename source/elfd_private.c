@@ -133,7 +133,27 @@ int _elfd_collection_remove_elfd_file(elfd_files_collection * collection_obj, in
 	@arg2: a sanitized user handler
 	@return: a pointer to the corresponding elfd_file struct, -1 if failed or the elfd_file not found 
 */
-elfd_file * _elfd_collection_get_file(elfd_files_collection *, int);
+elfd_file * _elfd_collection_get_file(elfd_files_collection * collection_obj, int handler)
+{
+	elfd_file * current;
+	int item_used = 0;
+	for (int i = 0; i < collection_obj->item_count; i ++)
+	{
+		if(item_used == collection_obj->item_used)
+			return -1;
+		current = collection_obj->collection[i];
+
+		if(current != NULL)
+		{
+			if(current->user_handle == handler)
+				return current;
+			item_used++;
+		}
+	}
+
+	return -1;
+}
+
 /*
 	Resize the collection with realloc
 	@arg1: pointer to the collection
