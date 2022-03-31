@@ -1,5 +1,5 @@
 #include "include/elfd_err.h"
-#include "include/elfd_internals.h"
+#include "include/elfd_private.h"
 #include <stdio.h>
 
 void elfd_warning(const char *from, const char *message)

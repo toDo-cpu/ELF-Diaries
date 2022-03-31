@@ -2,12 +2,8 @@
 /* Info : library header */
 /* Note : All of theses functions should sanitize user input */
 
-
 #ifndef _ELFD_H
 #define _ELFD_H
-
-#include "elfd_private.h"
-#include "elfd_structs.h"
 
 /* 
     Init the library structures

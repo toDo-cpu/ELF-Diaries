@@ -10,9 +10,26 @@
 #include "include/elfd.h"
 #include "include/elfd_structs.h"
 #include "include/elfd_err.h"
-#include "include/elfd_internals.h"
+#include "include/elfd_private.h"
 
 elfd_files_collection * collection_obj = NULL;
+
+int elfd_fini()
+{
+    elfd_file * current;
+    if(collection_obj == NULL)
+        return -1;
+    
+    for (int i = 0; collection_obj->item_count; i++)
+    {
+        if(current != NULL)
+        {
+            _elfd_destruct_elfd_file(current);
+        }
+    }
+
+    return 0;
+}
 
 int elfd_init()
 {
@@ -36,15 +53,15 @@ int elfd_init()
     memset((void*)arr, 0x00, sizeof(elfd_file *) * _COLLECTION_PAGE_SIZE);
 
     /* Fill the collection struct */
-    collection_obj->latst_user_handler = 0;
+    collection_obj->last_user_handle = 0;
     collection_obj->item_count = _COLLECTION_PAGE_SIZE;
     collection_obj->item_used = 0x0;
     collection_obj->last_freed_item;
-    collection_obj->elfd_files_collection = (elfd_files **)arr;
+    collection_obj->collection = (elfd_file **)arr;
 
     return 0;
 err_free:
-    free(collection_obj)
+    free(collection_obj);
     collection_obj = NULL;
 err:
     return -1;
@@ -52,19 +69,15 @@ err:
 
 int elfd_close(int elfd_descriptor)
 {
-    if(elfd_descriptor < 0 || elfd_descriptor > collection_obj->latst_user_handler)
+    if(elfd_descriptor < 0 || elfd_descriptor > collection_obj->last_user_handle)
     {
         elfd_warning("elfd_close","given elfd_descriptor is out of range");
         return -1;
     }
-
-
     if(_elfd_collection_remove_elfd_file(collection_obj, elfd_descriptor) == -1)
     {
         return -1;
     }
-
-
     return 0;    
 }
 
@@ -106,7 +119,7 @@ int elfd_open(const char * path)
     }
 
     /* Register elfd_file struct to handle the elf file */
-    if((file = _elfd_register_elfd_file() == (elfd_file*)-1)
+    if((file = _elfd_register_elfd_file()) == (elfd_file*)-1)
     {
         elfd_warning("elfd_open()", "Allocating memory to elfd_file struct failed");
         goto _err;
@@ -130,7 +143,7 @@ int elfd_open(const char * path)
     file->fd = fd;
     memcpy((void*)file->path, path, MAX_PATH_SIZE);
     file->addr = mmapped_addr;
-    file->user_handle = elfd_file_list->latest_handler++;
+    file->user_handle = collection_obj->last_user_handle++;
     file->len= stat_buffer.st_size;
 
     if(_elfd_collection_append_elfd_file(collection_obj, file) == -1)
@@ -142,9 +155,9 @@ int elfd_open(const char * path)
     return file->user_handle;
 
 _err_unmap:
-    unmap(file->addr, file->len);
+    munmap(file->addr, file->len);
 _err_elf_file:
-    _elfd_unregister_elfd_file(elf_file);
+    _elfd_unregister_elfd_file(file);
 _err:
     close(fd);
     return -1;

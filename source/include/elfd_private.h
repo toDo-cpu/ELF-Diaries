@@ -10,7 +10,7 @@
 	Allocate on elfd_file on the heap and zeroed it
 	@return: pointer to elfd_file or -1 if failed
 */
-efd_file * _elfd_register_elfd_file();
+elfd_file * _elfd_register_elfd_file();
 /*
 	Free an elfd_file on the heap, zeroed it before
 	@arg1: a valid pointer to an elfd_file struct allocated on the heap to free
@@ -43,7 +43,7 @@ elfd_file * _elfd_collection_get_file(elfd_files_collection *, int);
 	@arg1: pointer to the collection
 	@return: 0 if sucess, -1 if failed
 */
-int _elfd_collection_resize(elfd_file_collection *);
+int _elfd_collection_resize(elfd_files_collection *);
 /*
 	Destruct elfd_file, unmap it, close fd and free unregister it
 	@arg1: pointer to an elfd_file
