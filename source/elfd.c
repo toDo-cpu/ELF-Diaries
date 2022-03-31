@@ -28,8 +28,11 @@ int elfd_init()
     void * arr = calloc(_COLLECTION_PAGE_SIZE, sizeof(elfd_file *));
     
     if(arr == NULL)
+    {
+        elfd_warning("elfd_init","Can not aklocate the collection vector");
         goto err_free;
-    
+    }
+
     memset((void*)arr, 0x00, sizeof(elfd_file *) * _COLLECTION_PAGE_SIZE);
 
     /* Fill the collection struct */
@@ -50,10 +53,17 @@ err:
 int elfd_close(int elfd_descriptor)
 {
     if(elfd_descriptor < 0 || elfd_descriptor > collection_obj->latst_user_handler)
+    {
+        elfd_warning("elfd_close","given elfd_descriptor is out of range");
         return -1;
+    }
+
 
     if(_elfd_collection_remove_elfd_file(collection_obj, elfd_descriptor) == -1)
+    {
         return -1;
+    }
+
 
     return 0;    
 }

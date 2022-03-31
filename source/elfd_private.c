@@ -22,6 +22,7 @@ efd_file * _elfd_register_elfd_file()
 
     return p;
 err:
+	elfd_warning("_elfd_register_elfd_file","Can not allocate space on the heap");
     return -1
 }
 /*
@@ -44,10 +45,14 @@ void _elfd_unregister_elfd_file(elfd_file * p)
 	@arg2: pointer to the elfd_file
 	@return: 0 if success, -1 if failed
 */
-int _elfd_collection_append_elfd_file(elfd_files_collection * collection_obj, elfd_file * file)
+int _elfd_collection_append_elfd_file(elfd_files_collection * collection_obj, elfd_file * new_file)
 {
 	if(new_file == -1)
+	{
+		elfd_warning("_elfd_collection_append_elfd_file","Bad arg")
 		return -1;
+	}
+
 
 	/* If the cache contain an free entry */
 	if(collection_obj->last_freed_item != NULL)
@@ -74,6 +79,7 @@ int _elfd_collection_append_elfd_file(elfd_files_collection * collection_obj, el
 		}
 	}
 
+	elfd_warning("_elfd_collection_append_elfd_file","no entry found");
 	return -1;
 }
 /*
@@ -93,6 +99,7 @@ int _elfd_collection_remove_elfd_file(elfd_files_collection * collection_obj, in
 		if(item_used == collection_obj->item_used)
 		{
 			/* We have check for every elfd_file in the list so the user handler isn't here */
+			_elfd_warning("_elfd_collection_remove_elfd_file","no entry have the right elfd_descriptor");
 			return -1;
 		}
 
@@ -138,7 +145,11 @@ elfd_file * _elfd_collection_get_file(elfd_files_collection * collection_obj, in
 	for (int i = 0; i < collection_obj->item_count; i ++)
 	{
 		if(item_used == collection_obj->item_used)
+		{
+			elfd_warning("_elfd_collection_get_file","no entry have the right elfd_descriptor");
 			return -1;
+		}
+
 		current = collection_obj->collection[i];
 
 		if(current != NULL)
@@ -161,6 +172,7 @@ int _elfd_collection_resize(elfd_file_collection * collection_obj)
 {
 	if(realloc(collection_obj->collection, _COLLECTION_PAGE_SIZE, sizeof(elfd_file *)) == NULL)
 	{
+		elfd_warning("_elfd_collection_resize","realloc() return NULL");
 		return -1;
 	}
 

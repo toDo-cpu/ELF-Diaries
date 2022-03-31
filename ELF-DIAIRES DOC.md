@@ -1,7 +1,5 @@
 # ELF-DIAIRES DOC
 
-
-
 ```c
 /* File : elfd_header.h */
 /* Info : contain all of the internals structures used by the library and some other stuff */
@@ -82,7 +80,8 @@ void elfd_fini();
 
 int elfd_open(const char *);
 int elfd_close(int);
-
-
 ```
 
+## Exceptions handling
+- use functions in **elfd_err.h**
+- the fonction where an error occured call **elfd_err/elfd_warn** and return -1
