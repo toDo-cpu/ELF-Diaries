@@ -8,7 +8,7 @@
 #define _ELFD_STRUCTS_H
 
 #define MAX_PATH_SIZE 256
-#define _COLLECTION_PAGE_SIZE 0x40
+#define _COLLECTION_PAGE_SIZE 0x20
 
 //This struct handle 1 elf opened elf file
 typedef struct {

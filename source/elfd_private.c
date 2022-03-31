@@ -104,13 +104,11 @@ int _elfd_collection_remove_elfd_file(elfd_files_collection * collection_obj, in
 			if(current->user_handle == handler)
 			{
 				/* current point the right elfd_file */
-				unmap(current->addr, current->len);
-				close(current->fd);
+				_elfd_destruct_elfd_file(current);
 
 				collection_obj->collection[i] = NULL;
 				*collection_obj->last_freed_item =  &collection_obj->collection[i];
-				
-				_unregister_elfd_file(current);
+				collection_obj->item_used--;
 				
 				return 0;
 			}
@@ -169,5 +167,16 @@ int _elfd_collection_resize(elfd_file_collection * collection_obj)
 	collection_obj->item_count += _COLLECTION_PAGE_SIZE;
 
 	return 0;
+}
+/*
+	Destruct elfd_file, unmap it, close fd and free unregister it
+	@arg1: pointer to an elfd_file
+	@return: none
+*/
+void _elfd_destruct_elfd_file(elfd_file * victim)
+{
+	unmap(victim->addr, victim->len);
+	close(victim->fd);
+	_elfd_unregister_elfd_file(victim);
 }
 

@@ -44,5 +44,10 @@ elfd_file * _elfd_collection_get_file(elfd_files_collection *, int);
 	@return: 0 if sucess, -1 if failed
 */
 int _elfd_collection_resize(elfd_file_collection *);
-
+/*
+	Destruct elfd_file, unmap it, close fd and free unregister it
+	@arg1: pointer to an elfd_file
+	@return: none
+*/
+void _elfd_destruct_elfd_file(elfd_file *);
 #endif

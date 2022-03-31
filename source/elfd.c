@@ -47,7 +47,16 @@ err:
     return -1;
 }
 
-int elfd_close(int);
+int elfd_close(int elfd_descriptor)
+{
+    if(elfd_descriptor < 0 || elfd_descriptor > collection_obj->latst_user_handler)
+        return -1;
+
+    if(_elfd_collection_remove_elfd_file(collection_obj, elfd_descriptor) == -1)
+        return -1;
+
+    return 0;    
+}
 
 /* Open and elf file and save it in the elf_vector */
 int elfd_open(const char * path)
