@@ -7,6 +7,8 @@
 #ifndef _ELFD_STRUCTS_H
 #define _ELFD_STRUCTS_H
 
+#define DEBUG
+
 #define MAX_PATH_SIZE 256
 #define _COLLECTION_PAGE_SIZE 0x20
 
@@ -26,7 +28,6 @@ typedef struct {
    	int last_user_handle;	/* To keep track the user handler */
     int item_count;	/* Total number of pointer in the collection */				
     int item_used;	/* Total number of valid pointer in the collection */
-    elfd_file ** last_freed_item; /* used as a cache which store the last entry which have been freed */
     elfd_file ** collection;	/* Pointer to the array of pointers to elfd_file */
 }elfd_files_collection;
 #endif

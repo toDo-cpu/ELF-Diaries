@@ -49,25 +49,18 @@ void _elfd_unregister_elfd_file(elfd_file * p)
 */
 int _elfd_collection_append_elfd_file(elfd_files_collection * collection_obj, elfd_file * new_file)
 {
+	debug("_elfd_collection_append_elfd_file","called.");
+
 	if(new_file == (elfd_file*)-1)
 	{
 		elfd_warning("_elfd_collection_append_elfd_file","Bad args");
 		return -1;
 	}
 
-
-	/* If the cache contain an free entry */
-	if(collection_obj->last_freed_item != NULL)
-	{
-		*(collection_obj->last_freed_item) = new_file;
-		collection_obj->item_used++;
-		return 0;
-	}
-
 	/* If the collection is full, resize it */
 	if(collection_obj->item_count == collection_obj->item_used)
 	{
-		if(!_elfd_collection_resize(collection_obj))
+		if(_elfd_collection_resize(collection_obj) == -1 )
 			return -1;
 	}
 
@@ -92,6 +85,7 @@ int _elfd_collection_append_elfd_file(elfd_files_collection * collection_obj, el
 */
 int _elfd_collection_remove_elfd_file(elfd_files_collection * collection_obj, int handler)
 {
+	debug("_elfd_collection_remove_elfd_file","called.");
 	elfd_file * current;
 	int item_used = 0;
 	
@@ -115,20 +109,12 @@ int _elfd_collection_remove_elfd_file(elfd_files_collection * collection_obj, in
 				/* current point the right elfd_file */
 				_elfd_destruct_elfd_file(current);
 
-				collection_obj->collection[i] = NULL;
-				*collection_obj->last_freed_item =  &collection_obj->collection[i];
 				collection_obj->item_used--;
 				
 				return 0;
 			}
 
 			item_used++;	/*Count used entry, so we can detect if we have checked all the allocated entry */
-		} 
-		/* If last_freed_item is null and collection_obj->collection[i] is null too, we can assign it 
-			to speed up the next elfd_open()*/
-		else if(*collection_obj->last_freed_item == NULL)
-		{
-			*collection_obj->last_freed_item = &collection_obj->collection[i];
 		}
 	}
 
@@ -142,6 +128,7 @@ int _elfd_collection_remove_elfd_file(elfd_files_collection * collection_obj, in
 */
 elfd_file * _elfd_collection_get_file(elfd_files_collection * collection_obj, int handler)
 {
+	debug("_elfd_collection_get_file","called.");
 	elfd_file * current;
 	int item_used = 0;
 	for (int i = 0; i < collection_obj->item_count; i ++)
@@ -172,15 +159,21 @@ elfd_file * _elfd_collection_get_file(elfd_files_collection * collection_obj, in
 	@return: 0 if sucess, -1 if failed
 */
 int _elfd_collection_resize(elfd_files_collection * collection_obj)
-{
-	if(reallocarray(collection_obj->collection, _COLLECTION_PAGE_SIZE, sizeof(elfd_file *)) == NULL)
+{	
+	debug("_elfd_collection_get_resize","called.");
+	void * new_region;
+	if(( new_region = realloc(collection_obj->collection, (collection_obj->item_count + _COLLECTION_PAGE_SIZE) * sizeof(elfd_file *)  ))== NULL)
 	{
-		elfd_warning("_elfd_collection_resize","reallocarray() return NULL");
+		elfd_warning("_elfd_collection_resize","realloc() return NULL");
 		return -1;
 	}
 
-	collection_obj->item_count += _COLLECTION_PAGE_SIZE;
+	new_region += _COLLECTION_PAGE_SIZE;
 
+	memset((char *)(new_region + collection_obj->item_count * (sizeof(elfd_file *))), 0x00, _COLLECTION_PAGE_SIZE * sizeof(elfd_file *));
+
+	collection_obj->item_count += _COLLECTION_PAGE_SIZE;
+	collection_obj->collection = new_region;
 	return 0;
 }
 /*

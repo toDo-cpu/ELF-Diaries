@@ -20,7 +20,7 @@ int elfd_fini()
     if(collection_obj == NULL)
         return -1;
     
-    for (int i = 0; collection_obj->item_count; i++)
+    for (int i = 0; i < collection_obj->item_count; i++)
     {
         if(current != NULL)
         {
@@ -56,7 +56,6 @@ int elfd_init()
     collection_obj->last_user_handle = 0;
     collection_obj->item_count = _COLLECTION_PAGE_SIZE;
     collection_obj->item_used = 0x0;
-    collection_obj->last_freed_item;
     collection_obj->collection = (elfd_file **)arr;
 
     return 0;
