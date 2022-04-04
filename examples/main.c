@@ -12,23 +12,11 @@ int main(int argc, char ** argv)
         perror(NULL);
     }
 
-    if((handler_1 = elfd_open("./test")) == -1)
+    for (int i = 0; i < 33 ; i ++)
     {
-        perror(NULL);
+        printf("%d\n",i);
+        elfd_open("./test");
     }
-
-    printf("handler 1: %d\n", handler_1);
-
-
-    if((handler_2 = elfd_open("./test")) == -1)
-    {
-        perror(NULL);
-    }
-
-    printf("handler 2: %d\n", handler_2);  
-
-    elfd_close(handler_2);
-    elfd_close(handler_2);
 
     elfd_fini();
 
